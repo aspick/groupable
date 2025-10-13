@@ -3,14 +3,14 @@ module Groupable
     self.table_name = 'groupable_groups'
 
     has_many :members,
-             class_name: -> { Groupable.configuration.member_class_name },
+             class_name: 'Groupable::Member',
              foreign_key: :group_id,
              dependent: :destroy
 
     has_many :users, through: :members, source: :user
 
     has_many :invites,
-             class_name: -> { Groupable.configuration.invite_class_name },
+             class_name: 'Groupable::Invite',
              foreign_key: :group_id,
              dependent: :destroy
 

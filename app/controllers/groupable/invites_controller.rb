@@ -12,7 +12,9 @@ module Groupable
     private
 
     def set_group
-      @group = current_user.groupable_groups.find(params[:group_id])
+      # Routes defined as member routes use :id param instead of :group_id
+      group_id = params[:group_id] || params[:id]
+      @group = current_user.groupable_groups.find(group_id)
     end
   end
 end

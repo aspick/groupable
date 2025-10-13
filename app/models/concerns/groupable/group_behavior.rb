@@ -6,7 +6,7 @@ module Groupable
       # Use configured member class for associations
       has_many :groupable_members,
                -> { extending GroupableMembersExtension },
-               class_name: -> { Groupable.configuration.member_class_name },
+               class_name: 'Groupable::Member',
                foreign_key: :group_id,
                dependent: :destroy
 
