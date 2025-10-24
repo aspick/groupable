@@ -3,19 +3,34 @@ module Groupable
     extend ActiveSupport::Concern
 
     included do
-      # Use configured member class for associations
+      # Use configured member and user classes for associations
+      member_class_name = Groupable.configuration.member_class_name
+      user_class_name = Groupable.configuration.user_class_name
+
       has_many :groupable_members,
                -> { extending GroupableMembersExtension },
-               class_name: 'Groupable::Member',
+               class_name: member_class_name,
                foreign_key: :group_id,
                dependent: :destroy
 
       has_many :groupable_users,
                through: :groupable_members,
-               source: :user
+               source: :user,
+               class_name: user_class_name
 
-      # Alias for better semantics
-      alias_method :members, :groupable_members unless method_defined?(:members)
+      # Create custom association name alias if configured
+      members_assoc_name = Groupable.configuration.members_association_name
+      if members_assoc_name != :groupable_members && !method_defined?(members_assoc_name)
+        alias_method members_assoc_name, :groupable_members
+      end
+
+      # Backward compatibility: provide :members alias if not already defined
+      # and not conflicting with custom association name
+      if members_assoc_name != :members && !method_defined?(:members)
+        alias_method :members, :groupable_members
+      end
+
+      # Provide :users alias if not already defined
       alias_method :users, :groupable_users unless method_defined?(:users)
     end
 
