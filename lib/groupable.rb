@@ -3,5 +3,6 @@ require "groupable/configuration"
 require "groupable/engine"
 
 module Groupable
-  # Your code goes here...
+  # Custom error class for configuration issues
+  class ConfigurationError < StandardError; end
 end
