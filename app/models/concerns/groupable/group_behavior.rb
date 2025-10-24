@@ -20,13 +20,13 @@ module Groupable
 
       # Create custom association name alias if configured
       members_assoc_name = Groupable.configuration.members_association_name
-      if members_assoc_name != :groupable_members && !method_defined?(members_assoc_name)
+      if members_assoc_name && members_assoc_name != :groupable_members && !method_defined?(members_assoc_name)
         alias_method members_assoc_name, :groupable_members
       end
 
       # Backward compatibility: provide :members alias if not already defined
       # and not conflicting with custom association name
-      if members_assoc_name != :members && !method_defined?(:members)
+      if (!members_assoc_name || members_assoc_name != :members) && !method_defined?(:members)
         alias_method :members, :groupable_members
       end
 

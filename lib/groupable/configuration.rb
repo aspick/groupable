@@ -132,7 +132,11 @@ module Groupable
       end
 
       # Validate that configured roles exist in the enum
-      missing_roles = @roles - klass.roles.keys.map(&:to_sym)
+      # Normalize both to symbols for comparison
+      configured_roles = @roles.map(&:to_sym)
+      enum_roles = klass.roles.keys.map(&:to_sym)
+      missing_roles = configured_roles - enum_roles
+
       if missing_roles.any?
         raise Groupable::ConfigurationError,
               "Member model '#{@member_class_name}' is missing required roles: #{missing_roles.join(', ')}. " \
