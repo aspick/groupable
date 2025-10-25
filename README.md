@@ -7,7 +7,9 @@ Groupable is a Rails Engine that provides flexible group and membership manageme
 - **Group Management**: Create, update, and manage groups
 - **Role-Based Permissions**: Support for multiple roles (member, editor, admin)
 - **Invite System**: Generate invite codes for adding members to groups
-- **Flexible Configuration**: Customize roles, expiry periods, and more
+- **Flexible Configuration**: Customize roles, expiry periods, table names, and association names
+- **Existing Model Support**: Seamlessly integrate with your existing Group/Member models
+- **Configuration Validation**: Built-in validation to catch configuration errors early
 - **API-Ready**: JSON API endpoints for all operations
 
 ## Installation
@@ -63,6 +65,15 @@ Groupable.configure do |config|
   config.member_class_name = 'Groupable::Member' # Default
   config.invite_class_name = 'Groupable::Invite' # Default
 
+  # Table name customization (optional, auto-detected from class if not set)
+  config.groups_table_name = nil   # Default: nil (uses class.table_name)
+  config.members_table_name = nil  # Default: nil (uses class.table_name)
+  config.users_table_name = nil    # Default: nil (uses class.table_name)
+
+  # Association name customization (optional)
+  config.members_association_name = :groupable_members  # Default
+  config.groups_association_name = :groupable_groups    # Default
+
   # Feature flags
   config.enable_invites = true
   config.invite_expiry_days = 30
@@ -74,6 +85,18 @@ end
 ```
 
 **Note:** Table names are automatically derived from the class names. For example, if you set `config.group_class_name = 'Group'`, the engine will use `Group.table_name` (typically `'groups'`).
+
+You can validate your configuration:
+
+```ruby
+# In config/initializers/groupable.rb
+Groupable.configure do |config|
+  # ... your configuration
+end
+
+# Validate configuration (raises Groupable::ConfigurationError if invalid)
+Groupable.configuration.validate!
+```
 
 ### 5. Implement current_user in your controllers
 
@@ -244,6 +267,10 @@ end
 # app/models/member.rb
 class Member < ApplicationRecord
   include Groupable::MemberBehavior
+
+  # Required: role enum with required roles
+  enum :role, { member: 1, editor: 2, admin: 3 }
+
   # ... existing code
 end
 ```
@@ -253,7 +280,42 @@ With this setup:
 - ✅ All Groupable functionality added via concerns
 - ✅ No data migration needed
 
-### Example 3: Mixed Approach
+### Example 3: Custom Association Names
+
+You can customize association names to match your existing code style:
+
+```ruby
+# config/initializers/groupable.rb
+Groupable.configure do |config|
+  config.group_class_name = 'Group'
+  config.member_class_name = 'Member'
+
+  # Use simpler association names
+  config.members_association_name = :members  # Instead of :groupable_members
+  config.groups_association_name = :groups    # Instead of :groupable_groups
+end
+
+# app/models/user.rb
+class User < ApplicationRecord
+  include Groupable::UserGroupable
+end
+```
+
+Now you can use simpler association names:
+
+```ruby
+# Access user's groups
+user.groups           # Custom alias (same as user.groupable_groups)
+user.groupable_groups # Original association (still available)
+
+# Access group's members
+group.members           # Custom alias (same as group.groupable_members)
+group.groupable_members # Original association (still available)
+```
+
+**Note:** The original association names (`:groupable_members`, `:groupable_groups`) remain available for backward compatibility.
+
+### Example 4: Mixed Approach
 
 You can mix and match as needed:
 
@@ -262,10 +324,48 @@ Groupable.configure do |config|
   config.group_class_name = 'Group'              # Use existing Group
   config.member_class_name = 'Groupable::Member' # Use Engine's Member
   config.invite_class_name = 'MyInvite'          # Use custom Invite
+
+  # Customize association names
+  config.members_association_name = :team_members
+  config.groups_association_name = :teams
 end
 ```
 
 ## Customization
+
+### Configuration Validation
+
+Groupable provides built-in configuration validation to catch errors early:
+
+```ruby
+# config/initializers/groupable.rb
+Groupable.configure do |config|
+  config.group_class_name = 'Group'
+  config.member_class_name = 'Member'
+  config.user_class_name = 'User'
+  config.roles = [:member, :editor, :admin]
+end
+
+# Validate configuration (recommended)
+Groupable.configuration.validate!
+```
+
+The validation checks:
+
+- ✅ All configured classes exist
+- ✅ Member model has a `role` enum
+- ✅ All required roles are defined in the enum
+
+If validation fails, it raises `Groupable::ConfigurationError` with a clear error message:
+
+```ruby
+# Example error message
+Groupable::ConfigurationError: Member model 'Member' must have a 'role' enum.
+Expected roles: member, editor, admin.
+Add 'enum :role, { member: 1, editor: 2, admin: 3 }' to your Member model.
+```
+
+**Tip:** Add `Groupable.configuration.validate!` to your initializer to catch configuration errors during application startup.
 
 ### Custom Roles
 
@@ -275,6 +375,12 @@ You can define custom roles in the configuration:
 Groupable.configure do |config|
   config.roles = [:viewer, :contributor, :moderator, :owner]
   config.default_role = :viewer
+end
+
+# Don't forget to update your Member model's enum
+class Member < ApplicationRecord
+  include Groupable::MemberBehavior
+  enum :role, { viewer: 1, contributor: 2, moderator: 3, owner: 4 }
 end
 ```
 
