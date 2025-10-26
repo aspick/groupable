@@ -28,7 +28,6 @@ require File.expand_path("dummy/app/models/application_record.rb", __dir__)
 require File.expand_path("dummy/app/models/user.rb", __dir__)
 
 RSpec.configure do |config|
-  config.fixture_path = nil
   config.use_transactional_fixtures = true
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
