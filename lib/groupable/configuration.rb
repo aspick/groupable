@@ -16,14 +16,14 @@ module Groupable
                 :invite_class_name
 
     def initialize
-      @user_class_name = 'User'
-      @group_class_name = 'Groupable::Group'
-      @member_class_name = 'Groupable::Member'
-      @invite_class_name = 'Groupable::Invite'
+      @user_class_name = "User"
+      @group_class_name = "Groupable::Group"
+      @member_class_name = "Groupable::Member"
+      @invite_class_name = "Groupable::Invite"
       @enable_invites = true
       @invite_expiry_days = 30
       @default_role = :member
-      @roles = [:member, :editor, :admin]
+      @roles = [ :member, :editor, :admin ]
       @groups_table_name = nil
       @members_table_name = nil
       @users_table_name = nil

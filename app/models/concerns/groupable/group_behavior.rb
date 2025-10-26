@@ -51,8 +51,8 @@ module Groupable
     # @return [Member] created member
     def join!(user, role = nil)
       role ||= Groupable.configuration.default_role
-      raise ArgumentError, 'user does not exist' unless user
-      raise ArgumentError, 'user is already joined' if joined?(user)
+      raise ArgumentError, "user does not exist" unless user
+      raise ArgumentError, "user is already joined" if joined?(user)
 
       groupable_members.create!(user: user, role: role)
     end
@@ -69,7 +69,7 @@ module Groupable
     def editor_members
       member_class = Groupable.configuration.member_class
       groupable_members.where(
-        role: [member_class.roles[:editor], member_class.roles[:admin]]
+        role: [ member_class.roles[:editor], member_class.roles[:admin] ]
       )
     end
 

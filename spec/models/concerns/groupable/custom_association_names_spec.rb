@@ -4,7 +4,7 @@ RSpec.describe 'Custom Association Names', type: :model do
   # Clean up after each test
   after(:each) do
     Groupable.reset_configuration!
-    
+
     # Remove dynamically created classes
     Object.send(:remove_const, :CustomGroup) if defined?(CustomGroup)
     Object.send(:remove_const, :CustomUser) if defined?(CustomUser)
@@ -36,10 +36,10 @@ RSpec.describe 'Custom Association Names', type: :model do
     it 'custom alias points to same association' do
       group = create(:groupable_group)
       user = create(:user)
-      
+
       # Use the base class to create a member
       Groupable::Group.find(group.id).join!(user, :member)
-      
+
       # Custom class should see the same member through custom alias
       custom_group = CustomGroup.find(group.id)
       expect(custom_group.team_members.count).to eq(1)
