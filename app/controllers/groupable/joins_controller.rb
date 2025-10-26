@@ -5,7 +5,7 @@ module Groupable
       invite = Invite.where_active_invite(join_params[:code]).first
       @group = invite&.group
 
-      raise ActiveRecord::RecordNotFound, 'Invalid invitation' unless @group
+      raise ActiveRecord::RecordNotFound, "Invalid invitation" unless @group
 
       render json: @group
     end
@@ -15,7 +15,7 @@ module Groupable
       invite = Invite.where_active_invite(join_params[:code]).first
       group = invite&.group
 
-      raise ActiveRecord::RecordNotFound, 'Invalid invitation' unless group
+      raise ActiveRecord::RecordNotFound, "Invalid invitation" unless group
 
       if group.joined?(current_user)
         return head :no_content
@@ -23,7 +23,7 @@ module Groupable
 
       group.join!(current_user)
 
-      render json: { status: 'ok' }
+      render json: { status: "ok" }
     end
 
     private
