@@ -1,7 +1,7 @@
 module Groupable
   class MembersController < ApplicationController
     before_action :set_group
-    before_action :require_editor_or_admin, only: [:update, :destroy]
+    before_action :require_editor_or_admin, only: [ :update, :destroy ]
 
     # GET /groupable/groups/:group_id/members
     def index
@@ -32,7 +32,7 @@ module Groupable
         end
       end
 
-      render json: { status: 'ok' }
+      render json: { status: "ok" }
     end
 
     # DELETE /groupable/groups/:group_id/members/:id
@@ -42,9 +42,9 @@ module Groupable
       check_delete_permission!(member)
 
       if member.destroy
-        render json: { status: 'ok' }
+        render json: { status: "ok" }
       else
-        render json: { status: 'error', error: member.errors }, status: :bad_request
+        render json: { status: "error", error: member.errors }, status: :bad_request
       end
     end
 
@@ -67,11 +67,11 @@ module Groupable
       current_member = @group.member_of_user(current_user)
 
       if current_member.member?
-        raise StandardError, 'The operation is not allowed with member role user'
+        raise StandardError, "The operation is not allowed with member role user"
       end
 
       if member.admin?
-        raise StandardError, 'Admin member cannot be deleted'
+        raise StandardError, "Admin member cannot be deleted"
       end
     end
 
@@ -79,15 +79,15 @@ module Groupable
       current_member = @group.member_of_user(current_user)
 
       if current_member.member?
-        raise StandardError, 'The operation is not allowed with member role user'
+        raise StandardError, "The operation is not allowed with member role user"
       end
 
       if request_role == :admin && !current_member.admin?
-        raise StandardError, 'Only admin can promote to admin'
+        raise StandardError, "Only admin can promote to admin"
       end
 
       if member.admin?
-        raise StandardError, 'Cannot change admin role'
+        raise StandardError, "Cannot change admin role"
       end
     end
   end

@@ -1,16 +1,16 @@
 module Groupable
   class Group < ApplicationRecord
-    self.table_name = 'groupable_groups'
+    self.table_name = "groupable_groups"
 
     has_many :members,
-             class_name: 'Groupable::Member',
+             class_name: "Groupable::Member",
              foreign_key: :group_id,
              dependent: :destroy
 
     has_many :users, through: :members, source: :user
 
     has_many :invites,
-             class_name: 'Groupable::Invite',
+             class_name: "Groupable::Invite",
              foreign_key: :group_id,
              dependent: :destroy
 
@@ -31,8 +31,8 @@ module Groupable
     # @return [Member] created member
     def join!(user, role = nil)
       role ||= Groupable.configuration.default_role
-      raise ArgumentError, 'user is not exist' unless user
-      raise ArgumentError, 'user is already joined' if joined?(user)
+      raise ArgumentError, "user is not exist" unless user
+      raise ArgumentError, "user is already joined" if joined?(user)
 
       members.create!(user: user, role: role)
     end
@@ -48,7 +48,7 @@ module Groupable
     # @return [ActiveRecord::Relation] members with editor or admin role
     def editor_members
       member_class = Groupable.configuration.member_class
-      members.where(role: [member_class.roles[:editor], member_class.roles[:admin]])
+      members.where(role: [ member_class.roles[:editor], member_class.roles[:admin] ])
     end
 
     # Create new group on user initiated flow

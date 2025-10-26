@@ -37,7 +37,7 @@ RSpec.describe Groupable::Configuration do
     end
 
     it 'has default roles' do
-      expect(config.roles).to eq([:member, :editor, :admin])
+      expect(config.roles).to eq([ :member, :editor, :admin ])
     end
   end
 
@@ -206,7 +206,7 @@ RSpec.describe Groupable::Configuration do
 
     context 'with string roles (YAML config scenario)' do
       it 'does not raise error when roles are strings instead of symbols' do
-        config.roles = ['member', 'editor', 'admin']
+        config.roles = [ 'member', 'editor', 'admin' ]
         expect { config.validate! }.not_to raise_error
       end
     end

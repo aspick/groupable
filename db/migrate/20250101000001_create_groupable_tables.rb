@@ -19,7 +19,7 @@ class CreateGroupableTables < ActiveRecord::Migration[7.2]
       t.timestamps
     end
 
-    add_index :groupable_members, [:user_id, :group_id], unique: true
+    add_index :groupable_members, [ :user_id, :group_id ], unique: true
 
     create_table :groupable_invites do |t|
       t.references :group, null: false, foreign_key: { to_table: :groupable_groups }

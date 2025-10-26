@@ -8,7 +8,7 @@ module Groupable
 
       has_many :groupable_members,
                class_name: member_class_name,
-               foreign_key: 'user_id',
+               foreign_key: "user_id",
                dependent: :destroy
 
       has_many :groupable_groups,

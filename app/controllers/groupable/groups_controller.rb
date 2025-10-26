@@ -1,6 +1,6 @@
 module Groupable
   class GroupsController < ApplicationController
-    before_action :set_group, only: [:show, :update, :destroy]
+    before_action :set_group, only: [ :show, :update, :destroy ]
 
     # GET /groupable/groups
     def index

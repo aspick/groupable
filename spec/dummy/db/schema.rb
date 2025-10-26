@@ -13,7 +13,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_01_000001) do
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["active"], name: "index_groupable_groups_on_active"
+    t.index [ "active" ], name: "index_groupable_groups_on_active"
   end
 
   create_table "groupable_members", force: :cascade do |t|
@@ -22,9 +22,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_01_000001) do
     t.integer "role", default: 1, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["group_id"], name: "index_groupable_members_on_group_id"
-    t.index ["user_id", "group_id"], name: "index_groupable_members_on_user_id_and_group_id", unique: true
-    t.index ["user_id"], name: "index_groupable_members_on_user_id"
+    t.index [ "group_id" ], name: "index_groupable_members_on_group_id"
+    t.index [ "user_id", "group_id" ], name: "index_groupable_members_on_user_id_and_group_id", unique: true
+    t.index [ "user_id" ], name: "index_groupable_members_on_user_id"
   end
 
   create_table "groupable_invites", force: :cascade do |t|
@@ -32,9 +32,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_01_000001) do
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_groupable_invites_on_code"
-    t.index ["created_at"], name: "index_groupable_invites_on_created_at"
-    t.index ["group_id"], name: "index_groupable_invites_on_group_id"
+    t.index [ "code" ], name: "index_groupable_invites_on_code"
+    t.index [ "created_at" ], name: "index_groupable_invites_on_created_at"
+    t.index [ "group_id" ], name: "index_groupable_invites_on_group_id"
   end
 
   add_foreign_key "groupable_invites", "groupable_groups", column: "group_id"
