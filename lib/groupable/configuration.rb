@@ -1,6 +1,7 @@
 module Groupable
   class Configuration
     attr_accessor :user_class_name,
+                  :current_user_resolver,
                   :enable_invites,
                   :invite_expiry_days,
                   :default_role,
@@ -11,12 +12,15 @@ module Groupable
                   :members_association_name,
                   :groups_association_name
 
-    attr_writer :group_class_name,
+    attr_writer :parent_controller,
+                :group_class_name,
                 :member_class_name,
                 :invite_class_name
 
     def initialize
       @user_class_name = "User"
+      @parent_controller = "ActionController::API"
+      @current_user_resolver = nil
       @group_class_name = "Groupable::Group"
       @member_class_name = "Groupable::Member"
       @invite_class_name = "Groupable::Invite"
@@ -29,6 +33,10 @@ module Groupable
       @users_table_name = nil
       @members_association_name = :groupable_members
       @groups_association_name = :groupable_groups
+    end
+
+    def parent_controller
+      @parent_controller
     end
 
     # Class name getters
@@ -44,7 +52,10 @@ module Groupable
       @invite_class_name
     end
 
-    # Class getters
+    def parent_controller_class
+      @parent_controller.constantize
+    end
+
     def user_class
       @user_class_name.constantize
     end

@@ -60,6 +60,10 @@ Groupable.configure do |config|
   # User model configuration
   config.user_class_name = 'User'
 
+  # Parent controller (default: "ActionController::API")
+  # Set this to your ApplicationController to inherit current_user, before_actions, etc.
+  config.parent_controller = 'ApplicationController'
+
   # Model class configuration (use existing models or Engine models)
   config.group_class_name = 'Groupable::Group'   # Default
   config.member_class_name = 'Groupable::Member' # Default
@@ -98,19 +102,38 @@ end
 Groupable.configuration.validate!
 ```
 
-### 5. Implement current_user in your controllers
+### 5. Configure Authentication
 
-The engine expects a `current_user` method to be available. You can implement this in your `ApplicationController`:
+Groupable needs access to `current_user`. Choose one of the following approaches:
+
+#### Option A: Set parent controller (Recommended)
+
+If your `ApplicationController` already defines `current_user`, set it as the parent:
 
 ```ruby
-class ApplicationController < ActionController::API
-  def current_user
-    @current_user ||= User.find_by(id: session[:user_id])
-  end
+Groupable.configure do |config|
+  config.parent_controller = 'ApplicationController'
 end
 ```
 
-Or if using a concern, ensure Groupable controllers inherit from it.
+All Groupable controllers will inherit from your `ApplicationController`, getting `current_user`, `before_action` callbacks, etc. automatically.
+
+#### Option B: Use a resolver
+
+If you don't want to change the parent controller, provide a resolver proc:
+
+```ruby
+Groupable.configure do |config|
+  config.current_user_resolver = ->(controller) {
+    token = controller.request.headers['Authorization']&.split(' ')&.last
+    User.find_by_token(token)
+  }
+end
+```
+
+#### Option C: Both
+
+You can set both. The resolver takes priority over the inherited `current_user`.
 
 ## API Endpoints
 
