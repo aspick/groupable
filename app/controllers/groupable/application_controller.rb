@@ -1,24 +1,16 @@
 module Groupable
-  class ApplicationController < ActionController::API
-    # Host application must define current_user method
-    # This can be done by including a concern or defining directly
+  class ApplicationController < Groupable.configuration.parent_controller_class
     rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
-    # For testing: delegate current_user to main ApplicationController if available
     def current_user
       return @current_user if defined?(@current_user)
 
-      # In test environment, try to use test header
-      # Rails converts X-Test-User-Id to HTTP_X_TEST_USER_ID
-      if Rails.env.test?
-        user_id = request.headers["HTTP_X_TEST_USER_ID"] || request.headers["X-Test-User-Id"]
-        if user_id.present?
-          user_class = Groupable.configuration.user_class
-          @current_user = user_class.find_by(id: user_id)
-        end
+      resolver = Groupable.configuration.current_user_resolver
+      @current_user = if resolver
+        resolver.call(self)
+      elsif defined?(super)
+        super
       end
-
-      @current_user
     end
 
     private

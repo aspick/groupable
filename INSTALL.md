@@ -60,22 +60,40 @@ class User < ApplicationRecord
 end
 ```
 
-### 6. Implement current_user in ApplicationController
+### 6. Configure Authentication
 
-Groupable controllers require the `current_user` method.
+Groupable controllers require access to `current_user`. Choose one of the following approaches:
 
-If you already have authentication, use it.
+#### Option A: Set parent controller (Recommended)
+
+If your `ApplicationController` already defines `current_user`, set it as the parent controller for Groupable:
 
 ```ruby
-class ApplicationController < ActionController::API
-  # Existing authentication logic
-  def current_user
-    @current_user ||= User.find_by(id: session[:user_id])
-  end
+# config/initializers/groupable.rb
+Groupable.configure do |config|
+  config.parent_controller = 'ApplicationController'
 end
 ```
 
-Alternatively, you can create a concern to share it.
+All Groupable controllers will inherit from your `ApplicationController`, getting `current_user`, `before_action` callbacks, locale settings, etc. automatically.
+
+#### Option B: Use a resolver
+
+If you don't want to change the parent controller (e.g., to keep `ActionController::API` as the parent), provide a resolver proc:
+
+```ruby
+# config/initializers/groupable.rb
+Groupable.configure do |config|
+  config.current_user_resolver = ->(controller) {
+    token = controller.request.headers['Authorization']&.split(' ')&.last
+    User.find_by_token(token)
+  }
+end
+```
+
+#### Option C: Both
+
+You can set both. The resolver takes priority over the inherited `current_user`.
 
 ### 7. Create configuration file (Optional)
 
@@ -229,7 +247,7 @@ rails groupable:migrate
 
 ### Q: Getting error that `current_user` is not found
 
-A: Define the `current_user` method in ApplicationController or Groupable::ApplicationController.
+A: Configure `parent_controller` to inherit from your `ApplicationController`, or set `current_user_resolver` in the initializer. See step 6 above.
 
 ### Q: Tables are not created
 
