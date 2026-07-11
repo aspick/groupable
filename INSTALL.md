@@ -13,7 +13,7 @@ This guide explains how to integrate the Groupable Engine into an existing Rails
 ### 1. Add to Gemfile
 
 ```ruby
-gem 'groupable', path: 'groupable'
+gem 'groupable', github: 'aspick/groupable'
 ```
 
 ### 2. Run bundle install

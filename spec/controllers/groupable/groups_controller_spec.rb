@@ -29,6 +29,20 @@ RSpec.describe Groupable::GroupsController, type: :controller do
       expect(groups.count).to eq(2)
       expect(groups.map { |g| g['id'] }).to contain_exactly(group1.id, group2.id)
     end
+
+    context 'with soft-deleted group' do
+      let!(:inactive_group) { create(:groupable_group, :inactive) }
+
+      before do
+        create(:groupable_member, user: user, group: inactive_group)
+      end
+
+      it 'does not include the soft-deleted group' do
+        get :index
+
+        expect(json.map { |g| g['id'] }).not_to include(inactive_group.id)
+      end
+    end
   end
 
   describe 'GET #show' do
@@ -53,6 +67,19 @@ RSpec.describe Groupable::GroupsController, type: :controller do
 
       it 'returns not found' do
         get :show, params: { id: other_group.id }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context 'when the group is soft-deleted' do
+      let(:inactive_group) { create(:groupable_group, :inactive) }
+
+      before do
+        create(:groupable_member, user: user, group: inactive_group)
+      end
+
+      it 'returns not found' do
+        get :show, params: { id: inactive_group.id }
         expect(response).to have_http_status(:not_found)
       end
     end
@@ -138,7 +165,7 @@ RSpec.describe Groupable::GroupsController, type: :controller do
 
         expect(response).to have_http_status(:no_content)
         expect(group.reload.active).to be false
-        expect(Groupable::Group.unscoped.find(group.id)).to be_present
+        expect(Groupable::Group.active).not_to include(group)
       end
     end
 

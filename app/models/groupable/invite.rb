@@ -2,12 +2,11 @@ module Groupable
   class Invite < ApplicationRecord
     self.table_name = "groupable_invites"
 
-    belongs_to :group, class_name: "Groupable::Group"
+    belongs_to :group, class_name: Groupable.configuration.group_class_name
 
     scope :where_active_invite, ->(code) do
-      expiry_days = Groupable.configuration.invite_expiry_days
       where(code: code)
-        .where(created_at: expiry_days.days.ago..Float::INFINITY)
+        .where(created_at: Groupable.configuration.invite_expiry_days.days.ago..)
     end
 
     after_initialize :initialize_code

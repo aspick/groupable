@@ -2,8 +2,6 @@ class CreateGroupableTables < ActiveRecord::Migration[7.2]
   def change
     create_table :groupable_groups do |t|
       t.string :name, null: false
-      t.string :auth_name
-      t.string :password_digest
       t.boolean :active, default: true
 
       t.timestamps
@@ -23,12 +21,12 @@ class CreateGroupableTables < ActiveRecord::Migration[7.2]
 
     create_table :groupable_invites do |t|
       t.references :group, null: false, foreign_key: { to_table: :groupable_groups }
-      t.string :code, null: false, index: true
+      t.string :code, null: false
 
       t.timestamps
     end
 
-    add_index :groupable_invites, :code
+    add_index :groupable_invites, :code, unique: true
     add_index :groupable_invites, :created_at
   end
 end

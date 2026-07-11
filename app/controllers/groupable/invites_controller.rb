@@ -1,10 +1,12 @@
 module Groupable
   class InvitesController < ApplicationController
+    before_action :ensure_invites_enabled
     before_action :set_group
+    before_action :require_editor_or_admin
 
     # POST /groupable/groups/:group_id/invites
     def create
-      @invite = @group.invites.create!
+      @invite = @group.groupable_invites.create!
 
       render json: { code: @invite.code }
     end
@@ -12,9 +14,7 @@ module Groupable
     private
 
     def set_group
-      # Routes defined as member routes use :id param instead of :group_id
-      group_id = params[:group_id] || params[:id]
-      @group = current_user.groupable_groups.find(group_id)
+      @group = find_current_user_group(params[:group_id])
     end
   end
 end

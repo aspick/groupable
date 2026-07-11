@@ -7,9 +7,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_01_000001) do
   end
 
   create_table "groupable_groups", force: :cascade do |t|
-    t.string "name"
-    t.string "auth_name"
-    t.string "password_digest"
+    t.string "name", null: false
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -32,7 +30,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_01_000001) do
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index [ "code" ], name: "index_groupable_invites_on_code"
+    t.index [ "code" ], name: "index_groupable_invites_on_code", unique: true
     t.index [ "created_at" ], name: "index_groupable_invites_on_created_at"
     t.index [ "group_id" ], name: "index_groupable_invites_on_group_id"
   end

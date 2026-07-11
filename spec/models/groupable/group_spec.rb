@@ -7,18 +7,26 @@ RSpec.describe Groupable::Group, type: :model do
     it { expect(subject).to respond_to(:invites) }
   end
 
-  describe 'default scope' do
+  describe '.active scope' do
     let!(:active_group) { create(:groupable_group, active: true) }
     let!(:inactive_group) { create(:groupable_group, :inactive) }
 
     it 'returns only active groups' do
-      expect(Groupable::Group.all).to include(active_group)
-      expect(Groupable::Group.all).not_to include(inactive_group)
+      expect(Groupable::Group.active).to include(active_group)
+      expect(Groupable::Group.active).not_to include(inactive_group)
     end
 
-    it 'can access inactive groups with unscoped' do
-      expect(Groupable::Group.unscoped.all).to include(active_group)
-      expect(Groupable::Group.unscoped.all).to include(inactive_group)
+    it 'does not hide inactive groups from the default scope' do
+      expect(Groupable::Group.all).to include(active_group)
+      expect(Groupable::Group.all).to include(inactive_group)
+    end
+  end
+
+  describe 'validations' do
+    it 'requires name' do
+      group = build(:groupable_group, name: nil)
+      expect(group).not_to be_valid
+      expect(group.errors[:name]).to include("can't be blank")
     end
   end
 
@@ -66,7 +74,7 @@ RSpec.describe Groupable::Group, type: :model do
       it 'raises ArgumentError' do
         expect {
           group.join!(nil)
-        }.to raise_error(ArgumentError, 'user is not exist')
+        }.to raise_error(ArgumentError, 'user does not exist')
       end
     end
 
@@ -155,20 +163,8 @@ RSpec.describe Groupable::Group, type: :model do
       expect {
         Groupable::Group.create_new_group!('Test Group', user)
       }.to raise_error(StandardError)
-        .and change { Groupable::Group.unscoped.count }.by(0)
+        .and change { Groupable::Group.count }.by(0)
         .and change { Groupable::Member.count }.by(0)
-    end
-  end
-
-  describe 'has_secure_password' do
-    let(:group) { create(:groupable_group) }
-
-    it 'allows setting and authenticating password' do
-      group.password = 'test_password'
-      group.save
-
-      expect(group.authenticate('test_password')).to eq(group)
-      expect(group.authenticate('wrong_password')).to be false
     end
   end
 end

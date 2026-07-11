@@ -3,9 +3,12 @@ module Groupable
     extend ActiveSupport::Concern
 
     included do
-      # Use configured member and user classes for associations
+      # Configuration values are read when this concern is included.
+      # Groupable must be configured (typically in an initializer) before
+      # the including model class is loaded.
       member_class_name = Groupable.configuration.member_class_name
       user_class_name = Groupable.configuration.user_class_name
+      invite_class_name = Groupable.configuration.invite_class_name
 
       has_many :groupable_members,
                -> { extending GroupableMembersExtension },
@@ -17,6 +20,15 @@ module Groupable
                through: :groupable_members,
                source: :user,
                class_name: user_class_name
+
+      if Groupable.configuration.enable_invites
+        has_many :groupable_invites,
+                 class_name: invite_class_name,
+                 foreign_key: :group_id,
+                 dependent: :destroy
+      end
+
+      scope :active, -> { where(active: true) } unless respond_to?(:active)
 
       # Create custom association name alias if configured
       members_assoc_name = Groupable.configuration.members_association_name
@@ -32,6 +44,11 @@ module Groupable
 
       # Provide :users alias if not already defined
       alias_method :users, :groupable_users unless method_defined?(:users)
+
+      # Provide :invites alias if not already defined
+      if Groupable.configuration.enable_invites && !method_defined?(:invites)
+        alias_method :invites, :groupable_invites
+      end
     end
 
     module GroupableMembersExtension
@@ -42,7 +59,7 @@ module Groupable
     # @param [Object] user - User object
     # @return [Boolean] joined
     def joined?(user)
-      groupable_users.include?(user)
+      groupable_members.exists?(user_id: user.id)
     end
 
     # Add user to this group
@@ -61,16 +78,13 @@ module Groupable
     # @param [Object] user - User object
     # @return [Member, nil] member
     def member_of_user(user)
-      groupable_members.find { |member| member.user_id == user.id }
+      groupable_members.find_by(user_id: user.id)
     end
 
     # Get editor and admin members
     # @return [ActiveRecord::Relation] members with editor or admin role
     def editor_members
-      member_class = Groupable.configuration.member_class
-      groupable_members.where(
-        role: [ member_class.roles[:editor], member_class.roles[:admin] ]
-      )
+      groupable_members.where(role: [ :editor, :admin ])
     end
 
     class_methods do

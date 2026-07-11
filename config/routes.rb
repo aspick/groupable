@@ -1,13 +1,8 @@
 Groupable::Engine.routes.draw do
-  resources :groups do
-    collection do
-      resource :join, only: [ :show, :create ], controller: "joins"
-    end
+  resource :join, only: [ :show, :create ], controller: "joins"
 
-    member do
-      resources :invites, only: [ :create ]
-    end
-
-    resources :members, only: [ :index, :show, :update, :destroy ]
+  resources :groups, except: [ :new, :edit ] do
+    resources :invites, only: [ :create ]
+    resources :members, only: [ :index, :show, :update, :destroy ], param: :user_id
   end
 end
