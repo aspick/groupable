@@ -445,6 +445,18 @@ The engine creates the following tables:
 - `groupable_members` - Join table between users and groups with roles
 - `groupable_invites` - Invite codes for joining groups
 
+The shipped migration does **not** add foreign key constraints on `group_id` / `user_id`, because the referenced tables depend on your configuration (`group_class_name`, `user_class_name`). If you use the engine's models exclusively, you can add them in your application:
+
+```ruby
+class AddGroupableForeignKeys < ActiveRecord::Migration[7.2]
+  def change
+    add_foreign_key :groupable_members, :groupable_groups, column: :group_id
+    add_foreign_key :groupable_members, :users
+    add_foreign_key :groupable_invites, :groupable_groups, column: :group_id
+  end
+end
+```
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub.

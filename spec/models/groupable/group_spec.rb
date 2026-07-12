@@ -5,6 +5,18 @@ RSpec.describe Groupable::Group, type: :model do
     it { expect(subject).to respond_to(:members) }
     it { expect(subject).to respond_to(:users) }
     it { expect(subject).to respond_to(:invites) }
+
+    it 'defines aliases as real associations usable with reflection APIs' do
+      group = create(:groupable_group)
+      user = create(:user)
+      group.join!(user)
+
+      expect(
+        Groupable::Group.joins(:members).where(groupable_members: { user_id: user.id })
+      ).to include(group)
+      expect { Groupable::Group.includes(:users).load }.not_to raise_error
+      expect { Groupable::Group.includes(:invites).load }.not_to raise_error
+    end
   end
 
   describe '.active scope' do

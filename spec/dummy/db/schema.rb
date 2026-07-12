@@ -34,8 +34,4 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_01_000001) do
     t.index [ "created_at" ], name: "index_groupable_invites_on_created_at"
     t.index [ "group_id" ], name: "index_groupable_invites_on_group_id"
   end
-
-  add_foreign_key "groupable_invites", "groupable_groups", column: "group_id"
-  add_foreign_key "groupable_members", "groupable_groups", column: "group_id"
-  add_foreign_key "groupable_members", "users"
 end

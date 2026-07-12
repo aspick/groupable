@@ -30,24 +30,36 @@ module Groupable
 
       scope :active, -> { where(active: true) } unless respond_to?(:active)
 
-      # Create custom association name alias if configured
+      # Aliases are defined as real associations (not alias_method) so that
+      # reflection-based APIs (joins/includes/preload, serializers) work with
+      # them. dependent: :destroy stays only on the canonical associations.
+      members_alias_names = []
       members_assoc_name = Groupable.configuration.members_association_name
-      if members_assoc_name && members_assoc_name != :groupable_members && !method_defined?(members_assoc_name)
-        alias_method members_assoc_name, :groupable_members
+      if members_assoc_name && members_assoc_name != :groupable_members
+        members_alias_names << members_assoc_name
+      end
+      members_alias_names << :members unless members_assoc_name == :members
+
+      members_alias_names.each do |alias_name|
+        next if method_defined?(alias_name)
+
+        has_many alias_name,
+                 -> { extending GroupableMembersExtension },
+                 class_name: member_class_name,
+                 foreign_key: :group_id
       end
 
-      # Backward compatibility: provide :members alias if not already defined
-      # and not conflicting with custom association name
-      if (!members_assoc_name || members_assoc_name != :members) && !method_defined?(:members)
-        alias_method :members, :groupable_members
+      unless method_defined?(:users)
+        has_many :users,
+                 through: :groupable_members,
+                 source: :user,
+                 class_name: user_class_name
       end
 
-      # Provide :users alias if not already defined
-      alias_method :users, :groupable_users unless method_defined?(:users)
-
-      # Provide :invites alias if not already defined
       if Groupable.configuration.enable_invites && !method_defined?(:invites)
-        alias_method :invites, :groupable_invites
+        has_many :invites,
+                 class_name: invite_class_name,
+                 foreign_key: :group_id
       end
     end
 

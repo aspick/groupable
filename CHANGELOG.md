@@ -46,6 +46,14 @@
   started to drift.
 - `GroupBehavior` now provides the `groupable_invites` association (aliased to
   `invites`) and an `active` scope.
+- Association aliases (`members`, `users`, `groups`, `invites` and custom
+  association names) are defined as real associations instead of `alias_method`,
+  so reflection-based APIs (`joins`, `includes`, serializers) work with them.
+- The shipped migration no longer adds foreign key constraints on
+  `group_id` / `user_id`: the referenced tables depend on the configured classes
+  (`group_class_name`, `user_class_name`), so fixed constraints to
+  `groupable_groups` broke the documented existing-model setups. Add the
+  constraints in your app if you use the engine's models exclusively (see README).
 - `member_of_user` uses `find_by` instead of loading all members.
 - `Groupable::Group` validates presence of `name`.
 
