@@ -29,9 +29,11 @@ module Groupable
       Groupable.configuration.invite_class
     end
 
-    # Find an active group the current user belongs to
+    # Find an active group the current user belongs to. Uses the group
+    # class's `active` scope so host models can supply their own predicate
+    # (GroupBehavior only defines the scope when the model doesn't).
     def find_current_user_group(id)
-      current_user.groupable_groups.where(active: true).find(id)
+      current_user.groupable_groups.active.find(id)
     end
 
     # Member record of current_user in @group (must be set by set_group)

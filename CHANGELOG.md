@@ -56,6 +56,9 @@
   constraints in your app if you use the engine's models exclusively (see README).
 - `member_of_user` uses `find_by` instead of loading all members.
 - `Groupable::Group` validates presence of `name`.
+- Controllers filter groups through the model's `active` scope instead of
+  hard-coding `where(active: true)`, so a host-defined `active` scope is
+  respected in group lookups.
 
 ## 0.1.0
 

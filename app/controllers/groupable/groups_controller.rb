@@ -4,7 +4,7 @@ module Groupable
 
     # GET /groupable/groups
     def index
-      @groups = current_user.groupable_groups.where(active: true)
+      @groups = current_user.groupable_groups.active
       render json: @groups
     end
 

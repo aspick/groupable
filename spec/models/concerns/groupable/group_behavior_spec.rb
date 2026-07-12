@@ -114,6 +114,28 @@ RSpec.describe Groupable::GroupBehavior, type: :model do
     end
   end
 
+  describe '.active scope' do
+    it 'provides an active scope filtering by the active flag' do
+      active_group = CustomGroup.create!(name: 'Active', active: true)
+      inactive_group = CustomGroup.create!(name: 'Inactive', active: false)
+
+      expect(CustomGroup.active).to include(active_group)
+      expect(CustomGroup.active).not_to include(inactive_group)
+    end
+
+    it 'does not override an existing active scope' do
+      stub_const('PreScopedGroup', Class.new(ApplicationRecord) do
+        self.table_name = 'groupable_groups'
+        scope :active, -> { none }
+        include Groupable::GroupBehavior
+      end)
+
+      PreScopedGroup.create!(name: 'Any Group', active: true)
+
+      expect(PreScopedGroup.active).to be_empty
+    end
+  end
+
   describe '.create_new_group!' do
     it 'creates group with user as admin' do
       group = CustomGroup.create_new_group!('New Group', user)

@@ -245,6 +245,12 @@ The engine supports three default roles:
 
 Groupable allows you to use your existing Group/Member models instead of the Engine's models. This is useful when migrating an existing application or when you need to maintain existing data structures.
 
+**Group model contract:** A group model used with Groupable must have a boolean `active` attribute. It is used for soft deletion (`group.active?`, `update!(active: false)`, groups are created with `active: true`) and for filtering lookups. `GroupBehavior` defines an `active` scope automatically **unless your model already defines one**, so you can supply your own predicate as long as it stays compatible with the `active` attribute semantics. If your existing `groups` table has no such column, add it:
+
+```ruby
+add_column :groups, :active, :boolean, default: true, null: false
+```
+
 ### Example 1: Using Existing Group Model Only
 
 If you already have a `Group` model and want to add Groupable functionality:
