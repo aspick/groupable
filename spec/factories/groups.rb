@@ -6,10 +6,5 @@ FactoryBot.define do
     trait :inactive do
       active { false }
     end
-
-    trait :with_auth do
-      auth_name { "auth_#{name}" }
-      password { "password123" }
-    end
   end
 end

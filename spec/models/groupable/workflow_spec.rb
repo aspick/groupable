@@ -47,8 +47,8 @@ RSpec.describe 'Groupable Workflow', type: :model do
       # Step 8: Admin soft-deletes the group
       group.update!(active: false)
       expect(group.reload.active).to be false
-      expect(Groupable::Group.find_by(id: group.id)).to be_nil
-      expect(Groupable::Group.unscoped.find(group.id)).to be_present
+      expect(Groupable::Group.active.find_by(id: group.id)).to be_nil
+      expect(Groupable::Group.find(group.id)).to be_present
     end
   end
 

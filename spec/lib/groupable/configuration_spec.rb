@@ -80,22 +80,6 @@ RSpec.describe Groupable::Configuration do
     end
   end
 
-  describe 'table name getters' do
-    let(:config) { Groupable::Configuration.new }
-
-    it 'returns group table name' do
-      expect(config.group_table_name).to eq('groupable_groups')
-    end
-
-    it 'returns member table name' do
-      expect(config.member_table_name).to eq('groupable_members')
-    end
-
-    it 'returns invite table name' do
-      expect(config.invite_table_name).to eq('groupable_invites')
-    end
-  end
-
   describe 'Groupable.configuration' do
     it 'returns configuration instance' do
       expect(Groupable.configuration).to be_a(Groupable::Configuration)
@@ -137,36 +121,6 @@ RSpec.describe Groupable::Configuration do
 
       expect(Groupable.configuration.invite_expiry_days).to eq(30)
       expect(Groupable.configuration.default_role).to eq(:member)
-    end
-  end
-
-  describe 'custom table names' do
-    let(:config) { Groupable::Configuration.new }
-
-    it 'has default nil values for custom table names' do
-      expect(config.groups_table_name).to be_nil
-      expect(config.members_table_name).to be_nil
-      expect(config.users_table_name).to be_nil
-    end
-
-    it 'allows setting custom table names' do
-      config.groups_table_name = 'custom_groups'
-      config.members_table_name = 'custom_members'
-      config.users_table_name = 'custom_users'
-
-      expect(config.groups_table_name).to eq('custom_groups')
-      expect(config.members_table_name).to eq('custom_members')
-      expect(config.users_table_name).to eq('custom_users')
-    end
-
-    it 'returns custom table name when set' do
-      config.groups_table_name = 'my_groups'
-      expect(config.group_table_name).to eq('my_groups')
-    end
-
-    it 'falls back to class table_name when custom table name is nil' do
-      config.groups_table_name = nil
-      expect(config.group_table_name).to eq('groupable_groups')
     end
   end
 

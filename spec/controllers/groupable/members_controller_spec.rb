@@ -35,7 +35,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
     end
 
     it 'returns the specific member' do
-      get :show, params: { group_id: group.id, id: member.user.id }
+      get :show, params: { group_id: group.id, user_id: member.user.id }
 
       expect(response).to have_http_status(:ok)
       expect(json['id']).to eq(member.id)
@@ -43,7 +43,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
     end
 
     it 'returns not found for non-existent member' do
-      get :show, params: { group_id: group.id, id: 99999 }
+      get :show, params: { group_id: group.id, user_id: 99999 }
       expect(response).to have_http_status(:not_found)
     end
   end
@@ -58,7 +58,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
       end
 
       it 'updates member role' do
-        put :update, params: { group_id: group.id, id: target_member.user.id }.merge(update_params)
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(update_params)
 
         expect(response).to have_http_status(:ok)
         expect(target_member.reload.role).to eq('editor')
@@ -66,7 +66,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
 
       it 'can promote member to admin' do
         params = { item: { role: 'admin' } }
-        put :update, params: { group_id: group.id, id: target_member.user.id }.merge(params)
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(params)
 
         expect(response).to have_http_status(:ok)
         expect(target_member.reload.role).to eq('admin')
@@ -76,7 +76,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
         current_member = group.members.find_by(user: user)
         params = { item: { role: 'admin' } }
 
-        put :update, params: { group_id: group.id, id: target_member.user.id }.merge(params)
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(params)
 
         expect(current_member.reload.role).to eq('editor')
         expect(target_member.reload.role).to eq('admin')
@@ -86,9 +86,27 @@ RSpec.describe Groupable::MembersController, type: :controller do
         admin_member = create(:groupable_member, :admin, group: group)
         params = { item: { role: 'member' } }
 
-        expect {
-          put :update, params: { group_id: group.id, id: admin_member.user.id }.merge(params)
-        }.to raise_error(StandardError, 'Cannot change admin role')
+        put :update, params: { group_id: group.id, user_id: admin_member.user.id }.merge(params)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(admin_member.reload.role).to eq('admin')
+      end
+
+      it 'returns bad request for unknown role' do
+        params = { item: { role: 'superuser' } }
+
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(params)
+
+        expect(response).to have_http_status(:bad_request)
+        expect(target_member.reload.role).to eq('member')
+      end
+
+      it 'returns bad request when role is missing' do
+        params = { item: { role: '' } }
+
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(params)
+
+        expect(response).to have_http_status(:bad_request)
       end
     end
 
@@ -98,7 +116,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
       end
 
       it 'can update member to editor' do
-        put :update, params: { group_id: group.id, id: target_member.user.id }.merge(update_params)
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(update_params)
 
         expect(response).to have_http_status(:ok)
         expect(target_member.reload.role).to eq('editor')
@@ -107,9 +125,10 @@ RSpec.describe Groupable::MembersController, type: :controller do
       it 'cannot promote to admin' do
         params = { item: { role: 'admin' } }
 
-        expect {
-          put :update, params: { group_id: group.id, id: target_member.user.id }.merge(params)
-        }.to raise_error(StandardError, 'Only admin can promote to admin')
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(params)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(target_member.reload.role).to eq('member')
       end
     end
 
@@ -119,7 +138,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
       end
 
       it 'returns forbidden' do
-        put :update, params: { group_id: group.id, id: target_member.user.id }.merge(update_params)
+        put :update, params: { group_id: group.id, user_id: target_member.user.id }.merge(update_params)
 
         expect(response).to have_http_status(:forbidden)
       end
@@ -137,7 +156,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
       it 'deletes the member' do
         target_member # ensure it exists
         expect {
-          delete :destroy, params: { group_id: group.id, id: target_member.user.id }
+          delete :destroy, params: { group_id: group.id, user_id: target_member.user.id }
         }.to change { Groupable::Member.count }.by(-1)
 
         expect(response).to have_http_status(:ok)
@@ -147,8 +166,10 @@ RSpec.describe Groupable::MembersController, type: :controller do
         admin_member = create(:groupable_member, :admin, group: group)
 
         expect {
-          delete :destroy, params: { group_id: group.id, id: admin_member.user.id }
-        }.to raise_error(StandardError, 'Admin member cannot be deleted')
+          delete :destroy, params: { group_id: group.id, user_id: admin_member.user.id }
+        }.not_to change { Groupable::Member.count }
+
+        expect(response).to have_http_status(:forbidden)
       end
     end
 
@@ -160,7 +181,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
       it 'can delete member' do
         target_member # ensure it exists
         expect {
-          delete :destroy, params: { group_id: group.id, id: target_member.user.id }
+          delete :destroy, params: { group_id: group.id, user_id: target_member.user.id }
         }.to change { Groupable::Member.count }.by(-1)
 
         expect(response).to have_http_status(:ok)
@@ -170,8 +191,10 @@ RSpec.describe Groupable::MembersController, type: :controller do
         admin_member = create(:groupable_member, :admin, group: group)
 
         expect {
-          delete :destroy, params: { group_id: group.id, id: admin_member.user.id }
-        }.to raise_error(StandardError, 'Admin member cannot be deleted')
+          delete :destroy, params: { group_id: group.id, user_id: admin_member.user.id }
+        }.not_to change { Groupable::Member.count }
+
+        expect(response).to have_http_status(:forbidden)
       end
     end
 
@@ -181,7 +204,7 @@ RSpec.describe Groupable::MembersController, type: :controller do
       end
 
       it 'returns forbidden' do
-        delete :destroy, params: { group_id: group.id, id: target_member.user.id }
+        delete :destroy, params: { group_id: group.id, user_id: target_member.user.id }
 
         expect(response).to have_http_status(:forbidden)
       end

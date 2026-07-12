@@ -27,6 +27,13 @@ RSpec.describe Groupable::UserGroupable, type: :model do
       expect(user.members.count).to eq(2)
     end
 
+    it 'defines aliases as real associations usable with reflection APIs' do
+      expect(
+        User.joins(:groups).where(groupable_groups: { id: group1.id })
+      ).to include(user)
+      expect { User.includes(:members).load }.not_to raise_error
+    end
+
     context 'when user is destroyed' do
       it 'destroys associated members' do
         expect {

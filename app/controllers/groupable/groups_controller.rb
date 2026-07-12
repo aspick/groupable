@@ -4,7 +4,7 @@ module Groupable
 
     # GET /groupable/groups
     def index
-      @groups = current_user.groupable_groups
+      @groups = current_user.groupable_groups.active
       render json: @groups
     end
 
@@ -15,20 +15,17 @@ module Groupable
 
     # POST /groupable/groups
     def create
-      @group = Group.create_new_group!(
+      @group = group_class.create_new_group!(
         group_params[:name],
         current_user
-      ) do |group, options|
-        # Allow host app to extend group creation
-        # via configuration or override
-      end
+      )
 
       render json: @group, status: :created
     end
 
     # PATCH/PUT /groupable/groups/:id
     def update
-      unless can_edit_group?(@group)
+      unless can_edit_group?
         return render_forbidden
       end
 
@@ -38,7 +35,7 @@ module Groupable
 
     # DELETE /groupable/groups/:id
     def destroy
-      unless can_delete_group?(@group)
+      unless can_delete_group?
         return render_forbidden
       end
 
@@ -49,21 +46,19 @@ module Groupable
     private
 
     def set_group
-      @group = current_user.groupable_groups.find(params[:id])
+      @group = find_current_user_group(params[:id])
     end
 
     def group_params
       params.require(:item).permit(:name)
     end
 
-    def can_edit_group?(group)
-      member = group.member_of_user(current_user)
-      member && (member.editor? || member.admin?)
+    def can_edit_group?
+      current_member && (current_member.editor? || current_member.admin?)
     end
 
-    def can_delete_group?(group)
-      member = group.member_of_user(current_user)
-      member && member.admin?
+    def can_delete_group?
+      current_member&.admin?
     end
   end
 end

@@ -37,6 +37,26 @@ RSpec.describe Groupable::JoinsController, type: :controller do
         expect(response).to have_http_status(:not_found)
       end
     end
+
+    context 'when the group is soft-deleted' do
+      let(:inactive_group) { create(:groupable_group, :inactive) }
+      let(:invite) { create(:groupable_invite, group: inactive_group) }
+
+      it 'returns not found' do
+        get :show, params: { code: invite.code }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context 'when invites are disabled' do
+      before { Groupable.configuration.enable_invites = false }
+      after { Groupable.configuration.enable_invites = true }
+
+      it 'returns not found' do
+        get :show, params: { code: invite.code }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
   end
 
   describe 'POST #create' do

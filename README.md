@@ -7,7 +7,7 @@ Groupable is a Rails Engine that provides flexible group and membership manageme
 - **Group Management**: Create, update, and manage groups
 - **Role-Based Permissions**: Support for multiple roles (member, editor, admin)
 - **Invite System**: Generate invite codes for adding members to groups
-- **Flexible Configuration**: Customize roles, expiry periods, table names, and association names
+- **Flexible Configuration**: Customize roles, expiry periods, and association names
 - **Existing Model Support**: Seamlessly integrate with your existing Group/Member models
 - **Configuration Validation**: Built-in validation to catch configuration errors early
 - **API-Ready**: JSON API endpoints for all operations
@@ -17,7 +17,7 @@ Groupable is a Rails Engine that provides flexible group and membership manageme
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'groupable', path: 'groupable'
+gem 'groupable', github: 'aspick/groupable'
 ```
 
 And then execute:
@@ -69,17 +69,12 @@ Groupable.configure do |config|
   config.member_class_name = 'Groupable::Member' # Default
   config.invite_class_name = 'Groupable::Invite' # Default
 
-  # Table name customization (optional, auto-detected from class if not set)
-  config.groups_table_name = nil   # Default: nil (uses class.table_name)
-  config.members_table_name = nil  # Default: nil (uses class.table_name)
-  config.users_table_name = nil    # Default: nil (uses class.table_name)
-
   # Association name customization (optional)
   config.members_association_name = :groupable_members  # Default
   config.groups_association_name = :groupable_groups    # Default
 
   # Feature flags
-  config.enable_invites = true
+  config.enable_invites = true  # false disables invite/join endpoints (404)
   config.invite_expiry_days = 30
 
   # Role configuration
@@ -88,7 +83,9 @@ Groupable.configure do |config|
 end
 ```
 
-**Note:** Table names are automatically derived from the class names. For example, if you set `config.group_class_name = 'Group'`, the engine will use `Group.table_name` (typically `'groups'`).
+**Note:** Table names are automatically derived from the class names via `Class.table_name`. For example, if you set `config.group_class_name = 'Group'`, the engine will use the `groups` table.
+
+**Important:** Configuration values are read when `Groupable::GroupBehavior` / `Groupable::MemberBehavior` / `Groupable::UserGroupable` are included into a model class. Always configure Groupable in an initializer (`config/initializers/groupable.rb`) so the configuration is in place before your model classes are loaded.
 
 You can validate your configuration:
 
@@ -147,10 +144,12 @@ You can set both. The resolver takes priority over the inherited `current_user`.
 
 ### Members
 
+Member endpoints identify a member by the **user id** (`:user_id`), not the member record id.
+
 - `GET /groupable/groups/:group_id/members` - List group members
-- `GET /groupable/groups/:group_id/members/:id` - Show member details
-- `PUT /groupable/groups/:group_id/members/:id` - Update member role
-- `DELETE /groupable/groups/:group_id/members/:id` - Remove member from group
+- `GET /groupable/groups/:group_id/members/:user_id` - Show member details
+- `PUT /groupable/groups/:group_id/members/:user_id` - Update member role
+- `DELETE /groupable/groups/:group_id/members/:user_id` - Remove member from group
 
 ### Invites
 
@@ -220,6 +219,8 @@ PUT /groupable/groups/:group_id/members/:user_id
 }
 ```
 
+**Single admin rule:** Each group has a single admin. Promoting another member to admin (admin only) automatically demotes the current admin to editor. The admin's role cannot be changed directly, and the admin member cannot be removed from the group.
+
 ## Roles and Permissions
 
 The engine supports three default roles:
@@ -234,14 +235,21 @@ The engine supports three default roles:
 |--------|--------|--------|-------|
 | View group | ✓ | ✓ | ✓ |
 | Edit group | ✗ | ✓ | ✓ |
-| Add members via invite | ✗ | ✓ | ✓ |
-| Remove members | ✗ | ✓ | ✓ |
-| Change member roles | ✗ | ✓ (except admin) | ✓ |
+| Create invite codes | ✗ | ✓ | ✓ |
+| Remove members (except admin) | ✗ | ✓ | ✓ |
+| Change member roles (except admin) | ✗ | ✓ | ✓ |
+| Promote a member to admin | ✗ | ✗ | ✓ |
 | Delete group | ✗ | ✗ | ✓ |
 
 ## Using Existing Models
 
 Groupable allows you to use your existing Group/Member models instead of the Engine's models. This is useful when migrating an existing application or when you need to maintain existing data structures.
+
+**Group model contract:** A group model used with Groupable must have a boolean `active` attribute. It is used for soft deletion (`group.active?`, `update!(active: false)`, groups are created with `active: true`) and for filtering lookups. `GroupBehavior` defines an `active` scope automatically **unless your model already defines one**, so you can supply your own predicate as long as it stays compatible with the `active` attribute semantics. If your existing `groups` table has no such column, add it:
+
+```ruby
+add_column :groups, :active, :boolean, default: true, null: false
+```
 
 ### Example 1: Using Existing Group Model Only
 
@@ -442,6 +450,18 @@ The engine creates the following tables:
 - `groupable_groups` - Group information
 - `groupable_members` - Join table between users and groups with roles
 - `groupable_invites` - Invite codes for joining groups
+
+The shipped migration does **not** add foreign key constraints on `group_id` / `user_id`, because the referenced tables depend on your configuration (`group_class_name`, `user_class_name`). If you use the engine's models exclusively, you can add them in your application:
+
+```ruby
+class AddGroupableForeignKeys < ActiveRecord::Migration[7.2]
+  def change
+    add_foreign_key :groupable_members, :groupable_groups, column: :group_id
+    add_foreign_key :groupable_members, :users
+    add_foreign_key :groupable_invites, :groupable_groups, column: :group_id
+  end
+end
+```
 
 ## Contributing
 

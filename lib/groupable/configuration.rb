@@ -1,21 +1,17 @@
 module Groupable
   class Configuration
     attr_accessor :user_class_name,
+                  :parent_controller,
                   :current_user_resolver,
+                  :group_class_name,
+                  :member_class_name,
+                  :invite_class_name,
                   :enable_invites,
                   :invite_expiry_days,
                   :default_role,
                   :roles,
-                  :groups_table_name,
-                  :members_table_name,
-                  :users_table_name,
                   :members_association_name,
                   :groups_association_name
-
-    attr_writer :parent_controller,
-                :group_class_name,
-                :member_class_name,
-                :invite_class_name
 
     def initialize
       @user_class_name = "User"
@@ -28,28 +24,8 @@ module Groupable
       @invite_expiry_days = 30
       @default_role = :member
       @roles = [ :member, :editor, :admin ]
-      @groups_table_name = nil
-      @members_table_name = nil
-      @users_table_name = nil
       @members_association_name = :groupable_members
       @groups_association_name = :groupable_groups
-    end
-
-    def parent_controller
-      @parent_controller
-    end
-
-    # Class name getters
-    def group_class_name
-      @group_class_name
-    end
-
-    def member_class_name
-      @member_class_name
-    end
-
-    def invite_class_name
-      @invite_class_name
     end
 
     def parent_controller_class
@@ -70,23 +46,6 @@ module Groupable
 
     def invite_class
       @invite_class_name.constantize
-    end
-
-    # Table name getters - automatically derived from class unless explicitly set
-    def group_table_name
-      @groups_table_name || group_class.table_name
-    end
-
-    def member_table_name
-      @members_table_name || member_class.table_name
-    end
-
-    def invite_table_name
-      invite_class.table_name
-    end
-
-    def user_table_name
-      @users_table_name || user_class.table_name
     end
 
     # Validate configuration and provide helpful error messages

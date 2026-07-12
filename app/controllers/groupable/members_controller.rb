@@ -5,41 +5,50 @@ module Groupable
 
     # GET /groupable/groups/:group_id/members
     def index
-      @members = @group.members.includes(:user).order(:id)
+      @members = @group.groupable_members.includes(:user).order(:id)
       render json: @members
     end
 
-    # GET /groupable/groups/:group_id/members/:id
+    # GET /groupable/groups/:group_id/members/:user_id
     def show
-      @member = @group.members.find_by!(user_id: params[:id])
+      @member = @group.groupable_members.find_by!(user_id: params[:user_id])
       render json: @member
     end
 
-    # PUT /groupable/groups/:group_id/members/:id
+    # PUT /groupable/groups/:group_id/members/:user_id
     def update
-      member = @group.members.find_by!(user_id: params[:id])
-      request_role = update_params[:role].to_sym
+      member = @group.groupable_members.find_by!(user_id: params[:user_id])
+      role = update_params[:role]
 
-      check_update_permission!(member, request_role)
+      unless role.present? && member_class.roles.key?(role.to_s)
+        return render_bad_request("Invalid role: #{role}")
+      end
 
-      Member.transaction do
+      request_role = role.to_sym
+
+      # Admin's role cannot be changed directly; promote another member instead
+      return render_forbidden if member.admin?
+      # Only an admin can promote another member to admin
+      return render_forbidden if request_role == :admin && !current_member.admin?
+
+      member_class.transaction do
         member.update!(role: request_role)
 
-        # If upgrading to admin, downgrade current user to editor
-        if request_role == :admin
-          current_member = @group.member_of_user(current_user)
-          current_member.update!(role: :editor) if current_member.admin?
+        # A group has a single admin: promoting a new admin demotes the current one
+        if request_role == :admin && current_member.admin?
+          current_member.update!(role: :editor)
         end
       end
 
       render json: { status: "ok" }
     end
 
-    # DELETE /groupable/groups/:group_id/members/:id
+    # DELETE /groupable/groups/:group_id/members/:user_id
     def destroy
-      member = @group.members.find_by!(user_id: params[:id])
+      member = @group.groupable_members.find_by!(user_id: params[:user_id])
 
-      check_delete_permission!(member)
+      # Admin member cannot be removed from the group
+      return render_forbidden if member.admin?
 
       if member.destroy
         render json: { status: "ok" }
@@ -51,44 +60,11 @@ module Groupable
     private
 
     def set_group
-      @group = current_user.groupable_groups.find(params[:group_id])
+      @group = find_current_user_group(params[:group_id])
     end
 
     def update_params
       params.require(:item).permit(:role)
-    end
-
-    def require_editor_or_admin
-      current_member = @group.member_of_user(current_user)
-      render_forbidden if current_member.member?
-    end
-
-    def check_delete_permission!(member)
-      current_member = @group.member_of_user(current_user)
-
-      if current_member.member?
-        raise StandardError, "The operation is not allowed with member role user"
-      end
-
-      if member.admin?
-        raise StandardError, "Admin member cannot be deleted"
-      end
-    end
-
-    def check_update_permission!(member, request_role)
-      current_member = @group.member_of_user(current_user)
-
-      if current_member.member?
-        raise StandardError, "The operation is not allowed with member role user"
-      end
-
-      if request_role == :admin && !current_member.admin?
-        raise StandardError, "Only admin can promote to admin"
-      end
-
-      if member.admin?
-        raise StandardError, "Cannot change admin role"
-      end
     end
   end
 end
